@@ -4,10 +4,13 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [SerializeField] private LayerMask platformMask;
 
     public Rigidbody2D body2D;
+    public BoxCollider2D collider2D;
     public Transform playerTransform;
     public Camera cam;
+    public Animator animator;
 
     public Vector3 mousePosition;
     public Vector3 playerPosition;
@@ -19,6 +22,7 @@ public class PlayerController : MonoBehaviour
 
     public float health;
     public float massLoss;
+    public bool isGrounded;
 
     // Start is called before the first frame update
     void Start()
@@ -30,8 +34,8 @@ public class PlayerController : MonoBehaviour
         recoil = 20;
         direction = -1;
         speed = 7;
-        health = 11;
-        massLoss = 2;
+        health = 10;
+        massLoss = 1;
     }
 
     // Update is called once per frame
@@ -68,14 +72,40 @@ public class PlayerController : MonoBehaviour
             recoil += massLoss;
             Vector3 trajectory = (recoil*direction) * aim;
             body2D.velocity = trajectory;
-            health -= 1;
-            recoil += massLoss;
+            health -= massLoss;
+            recoil += massLoss*2;
         }
 
         //DEATH
         //Logic for when health runs out
-        if (health <= 0) {
+        if (health < 0) {
             //gameObject.SetActive() = false;
+            
+            //Reset health and recoil for testing - same logic can be used for ammo and health pickups
+            recoil = 20;
+            health = 10;
         }
+
+        //ANIMATION
+        isGrounded = GroundCheck();
+        PlayerAnimation();
+    }
+
+    //Check if Player is on the ground
+    bool GroundCheck()
+    {
+        RaycastHit2D hit;
+        float extra = .5f;
+
+        hit = Physics2D.Raycast(collider2D.bounds.center, Vector2.down, collider2D.bounds.extents.y + extra, platformMask);
+        return hit.collider != null;
+    }
+
+    void PlayerAnimation()
+    {
+        animator.SetInteger("VelocityX", (int) body2D.velocity.x);
+        animator.SetInteger("VelocityY", (int) body2D.velocity.y);
+        animator.SetBool("IsGrounded", isGrounded);
+        animator.SetInteger("Health", (int) health);
     }
 }
